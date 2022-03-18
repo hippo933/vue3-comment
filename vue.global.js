@@ -14844,6 +14844,7 @@ var Vue = (() => {
   }
 
   // packages/reactivity/src/dep.ts
+  // ! 创建Dep
   var createDep = (effects) => {
     const dep = new Set(effects);
     dep.w = 0;
@@ -14878,11 +14879,13 @@ var Vue = (() => {
   };
 
   // packages/reactivity/src/effect.ts
+  // !原始数据 Map
   var targetMap = /* @__PURE__ */ new WeakMap();
   var effectTrackDepth = 0;
   var trackOpBit = 1;
   var maxMarkerBits = 30;
   var effectStack = [];
+  // ! 当前激活的 effect 用于收集依赖
   var activeEffect;
   var ITERATE_KEY = Symbol(true ? "iterate" : "");
   var MAP_KEY_ITERATE_KEY = Symbol(true ? "Map key iterate" : "");
@@ -14960,6 +14963,7 @@ var Vue = (() => {
   function stop(runner) {
     runner.effect.stop();
   }
+  // ! 是否应该收集依赖
   var shouldTrack = true;
   var trackStack = [];
   function pauseTracking() {
@@ -14974,6 +14978,7 @@ var Vue = (() => {
     const last2 = trackStack.pop();
     shouldTrack = last2 === void 0 ? true : last2;
   }
+  // ! 收集依赖
   function track(target, type, key) {
     if (!isTracking()) {
       return;
@@ -15012,6 +15017,7 @@ var Vue = (() => {
       }
     }
   }
+  // ! 触发依赖
   function trigger(target, type, key, newValue, oldValue, oldTarget) {
     const depsMap = targetMap.get(target);
     if (!depsMap) {
@@ -15148,6 +15154,7 @@ var Vue = (() => {
         return res;
       }
       if (!isReadonly2) {
+        // ! 收集依赖
         track(target, "get" /* GET */, key);
       }
       if (shallow) {
@@ -15157,6 +15164,7 @@ var Vue = (() => {
         const shouldUnwrap = !targetIsArray || !isIntegerKey(key);
         return shouldUnwrap ? res.value : res;
       }
+      // ! 计算的值如果是对象递归的执行 reactive 函数
       if (isObject(res)) {
         return isReadonly2 ? readonly(res) : reactive(res);
       }
@@ -15214,6 +15222,7 @@ var Vue = (() => {
     track(target, "iterate" /* ITERATE */, isArray(target) ? "length" : ITERATE_KEY);
     return Reflect.ownKeys(target);
   }
+  // ! base proxy handler
   var mutableHandlers = {
     get,
     set,
@@ -15477,6 +15486,7 @@ var Vue = (() => {
       return Reflect.get(hasOwn(instrumentations, key) && key in target ? instrumentations : target, key, receiver);
     };
   }
+  
   var mutableCollectionHandlers = {
     get: /* @__PURE__ */ createInstrumentationGetter(false, false)
   };
@@ -15524,9 +15534,11 @@ var Vue = (() => {
         return 0 /* INVALID */;
     }
   }
+  // ! 获取target类型
   function getTargetType(value) {
     return value["__v_skip" /* SKIP */] || !Object.isExtensible(value) ? 0 /* INVALID */ : targetTypeMap(toRawType(value));
   }
+  // ! 响应式函数
   function reactive(target) {
     if (isReadonly(target)) {
       return target;
@@ -15542,6 +15554,7 @@ var Vue = (() => {
   function shallowReadonly(target) {
     return createReactiveObject(target, true, shallowReadonlyHandlers, shallowReadonlyCollectionHandlers, shallowReadonlyMap);
   }
+  // ! 创建响应式对象
   function createReactiveObject(target, isReadonly2, baseHandlers, collectionHandlers, proxyMap) {
     if (!isObject(target)) {
       if (true) {
@@ -15560,6 +15573,7 @@ var Vue = (() => {
     if (targetType === 0 /* INVALID */) {
       return target;
     }
+    // ! WeakSet类型的target targetType = 2
     const proxy = new Proxy(target, targetType === 2 /* COLLECTION */ ? collectionHandlers : baseHandlers);
     proxyMap.set(target, proxy);
     return proxy;
@@ -15677,6 +15691,7 @@ var Vue = (() => {
       }
     }
   };
+  // ! 把参数变为响应式
   function proxyRefs(objectWithRefs) {
     return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers);
   }
@@ -17944,6 +17959,7 @@ var Vue = (() => {
     };
   }
   var shouldCacheAccess = true;
+  // ! 兼容 options Api
   function applyOptions(instance) {
     const options = resolveMergedOptions(instance);
     const publicThis = instance.proxy;
